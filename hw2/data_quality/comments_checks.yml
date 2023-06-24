@@ -1,0 +1,26 @@
+# 2. Мы не очень доверяем парсеру (он ведь и так не каждый раз корректно парсит комментарии).
+# Поэтому нужно контролировать, что количество "битых" записей в датасете комментариев
+# не превышает 50%. Для этого нужно добавить проверку качества данных для датасета UScomments.csv.
+checks for comments_all:
+  - missing_percent(comment_text) < 50%
+
+# 3. Ну и раз уж мы занялись качеством данных, нужно проверить, что при считывании в режиме DROPMALFORMED мы получаем данные, соответствующие следующим требованиям:
+# Корректная схема данных
+# Корректные идентификаторы видео (по содержанию спецсимволов и длине)
+# Корректные значения в полях likes и replies: все значения >= 0 и есть хотя бы одно значение > 0
+checks for comments_valid:
+  - schema:
+      name: Confirm that required columns are present
+      fail:
+        when required column missing: [video_id, comment_text, likes, replies]
+        when wrong column type:
+          video_id: varchar
+          comment_text: varchar
+          likes: int 
+          replies: int
+  - invalid_count(video_id) = 0:
+      valid regex: '^[\d\w_-]{11}$'
+  - min(likes) = 0
+  - max(likes) > 0
+  - min(replies) = 0
+  - max(replies) > 0
